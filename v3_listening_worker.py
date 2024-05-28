@@ -10,17 +10,20 @@
 import pika
 import sys
 import time
+import datetime
+import logging
+
 
 
 # define a callback function to be called when a message is received
 def callback(ch, method, properties, body):
     """ Define behavior on getting a message."""
     # decode the binary message body to a string
-    print(f" [x] Received {body.decode()}")
+    logger.info(f" [x] Received {body.decode()} at {datetime.datetime.now()}")
     # simulate work by sleeping for the number of dots in the message
     time.sleep(body.count(b"."))
     # when done with task, tell the user
-    print(" [x] Done.")
+    logger.info(" [x] Done.")
     # acknowledge the message was received and processed 
     # (now it can be deleted from the queue)
     ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -38,11 +41,9 @@ def main(hn: str = "localhost", qn: str = "task_queue"):
 
     # except, if there's an error, do this
     except Exception as e:
-        print()
-        print("ERROR: connection to RabbitMQ server failed.")
-        print(f"Verify the server is running on host={hn}.")
-        print(f"The error says: {e}")
-        print()
+        logger.error("ERROR: connection to RabbitMQ server failed.")
+        logger.error(f"Verify the server is running on host={hn}.")
+        logger.error(f"The error says: {e}")
         sys.exit(1)
 
     try:
@@ -78,16 +79,14 @@ def main(hn: str = "localhost", qn: str = "task_queue"):
 
     # except, in the event of an error OR user stops the process, do this
     except Exception as e:
-        print()
-        print("ERROR: something went wrong.")
-        print(f"The error says: {e}")
+        logger.error("ERROR: something went wrong.")
+        logger.error(f"The error says: {e}")
         sys.exit(1)
     except KeyboardInterrupt:
-        print()
-        print(" User interrupted continuous listening process.")
+        logger.info(" User interrupted continuous listening process.")
         sys.exit(0)
     finally:
-        print("\nClosing connection. Goodbye.\n")
+        logger.info("\nClosing connection. Goodbye.\n")
         connection.close()
 
 
